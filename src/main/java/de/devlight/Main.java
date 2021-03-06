@@ -2,12 +2,20 @@ package de.devlight;
 
 import java.util.stream.Collectors;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.devlight.events.EventHandlers;
+import de.devlight.utils.ArraySerialiazer;
+import kong.unirest.Unirest;
+import kong.unirest.gson.GsonObjectMapper;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -22,6 +30,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod("devlights")
+@OnlyIn(Dist.CLIENT)
 public class Main {
     // Directly reference a log4j logger.
     private static final Logger LOGGER = LogManager.getLogger();
@@ -43,6 +52,11 @@ public class Main {
 
     private void setup(final FMLCommonSetupEvent event) {
         // some preinit code
+        Gson gson = new GsonBuilder().registerTypeAdapter(String[].class, new ArraySerialiazer<>()).create();
+
+        Unirest.config().setDefaultHeader("Content-Type", "application/json").defaultBaseUrl("http://devlight.local")
+                .setObjectMapper(new GsonObjectMapper(gson));
+
         LOGGER.info("HELLO FROM PREINIT");
         LOGGER.info("DIRT BLOCK >> {}", Blocks.DIRT.getRegistryName());
     }

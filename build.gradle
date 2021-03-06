@@ -115,6 +115,8 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
     compile 'com.konghq:unirest-java:3.11.04'
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.konghq:unirest-object-mappers-gson:3.11.09'
 
 }
 
