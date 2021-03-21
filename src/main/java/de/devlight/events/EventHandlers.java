@@ -1,10 +1,5 @@
 package de.devlight.events;
 
-import java.util.Date;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.devlight.api.Api;
 import de.devlight.biome.BiomeDetector;
 import de.devlight.utils.Color;
@@ -19,6 +14,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.TickEvent.Phase;
 import net.minecraftforge.event.TickEvent.PlayerTickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.Date;
 
 @OnlyIn(Dist.CLIENT)
 public class EventHandlers {

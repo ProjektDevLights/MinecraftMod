@@ -1,8 +1,5 @@
 package de.devlight.biome;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.devlight.api.Api;
 import de.devlight.utils.Color;
 import net.minecraft.client.Minecraft;
@@ -10,8 +7,10 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.Biomes;
 import net.minecraft.world.biome.Biome.Category;
+import net.minecraft.world.biome.Biomes;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class BiomeDetector {
 
