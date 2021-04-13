@@ -11,16 +11,19 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.LightType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.event.TickEvent.Phase;
 import net.minecraftforge.event.TickEvent.PlayerTickEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Date;
+import java.util.Locale;
 
 @OnlyIn(Dist.CLIENT)
-public class EventHandlers {
+public class EventHandlersIngame {
 
     private BiomeDetector biomeDetector = new BiomeDetector();
     private static final Logger LOGGER = LogManager.getLogger();
@@ -52,7 +55,6 @@ public class EventHandlers {
                 next.setTime(next.getTime() + 1000);
                 nextUpdate = next;
             }
-
             double sunLightReductionRatioByRain = 1 - world.getRainStrength(1.0f) * 5 / 16;
             double sunLightReductionRatioByThunder = 1 - world.getThunderStrength(1.0f) * 5 / 16;
             double sunLightReductionRatioByTime = 0.5
@@ -73,6 +75,24 @@ public class EventHandlers {
         }
     }
 
+    @SubscribeEvent
+    public void onPlayerDeath(LivingDeathEvent event){
+        if(isRightPlayer(event.getEntityLiving())){
+            Api.blink(new Color("#ff0000"), 1000);
+        }
+    }
+
+
+    @SubscribeEvent
+    public void onChatMessageReceived(ClientChatReceivedEvent event){
+        String messsage = event.getMessage().toString().toLowerCase();
+        if(messsage.contains("party")){
+            if(messsage.contains("end")){
+                biomeDetector.run(true);
+            } else Api.startParty();
+        }
+    }
+
     /*
      * @SubscribeEvent public void onPlayerHurt(LivingAttackEvent event) { if
      * (isRightPlayer(event.getEntityLiving())) { LOGGER.info("player hurt");
@@ -83,6 +103,6 @@ public class EventHandlers {
         if (!(player instanceof PlayerEntity)) {
             return false;
         }
-        return Minecraft.getInstance().player.equals((PlayerEntity) player);
+        return Minecraft.getInstance().player.equals(player);
     }
 }

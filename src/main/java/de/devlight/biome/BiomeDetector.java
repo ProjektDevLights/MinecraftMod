@@ -23,17 +23,22 @@ public class BiomeDetector {
     public BiomeDetector() {
     }
 
-    public void run() {
+    public void run(boolean force) {
         PlayerEntity player = mc.player;
         Biome biome = mc.world.getBiomeManager().getBiome(player.getPosition());
-        if (currentBiome == null || !currentBiome.equals(biome)) {
+        if (currentBiome == null || (!currentBiome.equals(biome) || force)) {
             currentBiome = biome;
             setColorWithBiome(biome);
         }
 
     }
 
+    public void run(){
+        run(false);
+    }
+
     public void setColorWithBiome(Biome biome) {
+        // TODO different biomes
         if (biome.getCategory().equals(Category.BEACH)) {
             LOGGER.info("beach");
             Api.setSingleColor(new Color("#ffc700"));
@@ -73,7 +78,6 @@ public class BiomeDetector {
             LOGGER.info("mushroom category");
         }
         if (biome.getCategory().equals(Category.NETHER)) {
-            // TODO different biomes
             LOGGER.info("nether category");
             if (compareBiomeToKey(biome, Biomes.NETHER_WASTES)) {
                 Api.setSingleColor(new Color("#380400"));

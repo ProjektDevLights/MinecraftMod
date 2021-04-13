@@ -1,6 +1,7 @@
 package de.devlight;
 
-import de.devlight.events.EventHandlers;
+import de.devlight.events.EventHandlerOthers;
+import de.devlight.events.EventHandlersIngame;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraftforge.api.distmarker.Dist;
@@ -40,7 +41,8 @@ public class Main {
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(new EventHandlers());
+        MinecraftForge.EVENT_BUS.register(new EventHandlersIngame());
+        MinecraftForge.EVENT_BUS.register(new EventHandlerOthers());
     }
 
     private void setup(final FMLCommonSetupEvent event) {

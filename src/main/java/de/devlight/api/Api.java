@@ -32,6 +32,14 @@ public class Api {
             return executeRequest("color", new UpdateColorDto("plain", color), RequestMethod.PATCH);
     }
 
+    public static Future<Boolean> setRunnerColor(Color color, Integer timeout) {
+        return executeRequest("color", new UpdateColorDto("runner", color, timeout), RequestMethod.PATCH);
+    }
+
+    public static Future<Boolean> startParty(){
+        return  executeRequest("color", new UpdateColorDto("rainbow", 500), RequestMethod.PATCH);
+    }
+
     public static Future<Boolean> blink(Color color, int time) {
         return executeRequest("blink",new BlinkColorDto(color, time), RequestMethod.POST);
     }
@@ -68,7 +76,6 @@ public class Api {
     public static Future<Boolean> executeRequest(String url, Object data, RequestMethod method) {
         return executor.submit(() -> {
             try {
-                System.out.println(method);
                 Response response = client.newCall(generateRequest(url, data, method)).execute();
                 response.close();
                 return response.isSuccessful();
