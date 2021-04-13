@@ -1,0 +1,139 @@
+package de.devlights.biome;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import de.devlights.api.Api;
+import de.devlights.utils.Color;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.RegistryKey;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.Biome.Category;
+import net.minecraft.world.biome.Biomes;
+import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+
+public class BiomeDetector {
+
+    private static final Logger LOGGER = LogManager.getLogger();
+    private final HashMap<String, Color> biomeMappings = new HashMap<>();
+    private final HashMap<Category, Color> categoryMappings = new HashMap<>();
+
+    Biome currentBiome;
+    Minecraft mc = Minecraft.getInstance();
+
+
+    public BiomeDetector(){
+        readBiomeMappings();
+        readCategoryMappings();
+    }
+
+    private void readBiomeMappings(){
+        ResourceLocation file = new ResourceLocation("devlights" ,"biome_mappings.json");
+        JsonObject jsonMappings = readJson(file);
+        for(Map.Entry<String, JsonElement> entry : jsonMappings.entrySet()){
+            System.out.println(entry.getKey());
+            try {
+                RegistryKey<Biome> registryKey = (RegistryKey<Biome>) Biomes.class.getDeclaredField(entry.getKey()).get(null);
+                biomeMappings.put(registryKey.getLocation().toString(), new Color(entry.getValue().getAsString()));
+            } catch (NoSuchFieldException  | IllegalAccessException  e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void readCategoryMappings(){
+        ResourceLocation file = new ResourceLocation("devlights" ,"biome_category_mappings.json");
+        JsonObject jsonMappings = readJson(file);
+        for(Map.Entry<String, JsonElement> entry : jsonMappings.entrySet()){
+            try {
+                Category category = (Category) Category.class.getDeclaredField(entry.getKey()).get(null);
+                categoryMappings.put(category, new Color(entry.getValue().getAsString()));
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    public void run(){
+        run(false);
+    }
+
+    public void run(boolean force) {
+        Biome biome = getPlayerBiome();
+        if (currentBiome == null || (!currentBiome.equals(biome) || force)) {
+            currentBiome = biome;
+            System.out.println(getColorForBiome(biome));
+            Api.setSingleColor(getColorForBiome(biome));
+        }
+
+    }
+
+    public Biome getPlayerBiome(){
+        return mc.world.getBiome(mc.player.getPosition());
+    }
+
+
+    private Color getColorForBiome(Biome biome){
+        try {
+            if(biome.getCategory().equals(Category.NETHER)){
+                try {
+                    return biomeMappings.get(getLocationFromBiome(biome).toString());
+                } catch (NullPointerException e){
+                    return categoryMappings.get(Category.NETHER);
+                }
+            } else {
+                return categoryMappings.get(biome.getCategory());
+            }
+        } catch (NullPointerException e){
+            System.out.println("Unkown Biome Category or wrong configuration file!");
+            return new Color("#ffffff");
+        }
+
+    }
+
+    public Color getColor(){
+        return getColorForBiome(getPlayerBiome());
+    }
+
+    private ResourceLocation getLocationFromBiome(Biome biome){
+        return Minecraft.getInstance().world.func_241828_r().getRegistry(Registry.BIOME_KEY).getKey(biome);
+    }
+
+    private boolean compareBiomeToKey(Biome biome, RegistryKey<Biome> key) {
+        return getLocationFromBiome(biome)
+                .equals(key.getLocation());
+
+    }
+
+
+    private JsonObject readJson(ResourceLocation location){
+       try {
+           String rawData = inputStreamToString(Minecraft.getInstance().getResourceManager().getResource(location).getInputStream());
+           return new Gson().fromJson(rawData, JsonObject.class);
+       } catch (IOException e) {
+           e.printStackTrace();
+       }
+       return new JsonObject();
+    }
+
+    private String inputStreamToString(InputStream stream){
+        try {
+            return IOUtils.toString(stream, StandardCharsets.UTF_8.name());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+
+    }
+}

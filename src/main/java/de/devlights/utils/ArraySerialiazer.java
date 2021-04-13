@@ -1,4 +1,4 @@
-package de.devlight.utils;
+package de.devlights.utils;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

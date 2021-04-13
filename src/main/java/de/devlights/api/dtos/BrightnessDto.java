@@ -1,4 +1,4 @@
-package de.devlight.api.dtos;
+package de.devlights.api.dtos;
 
 public class BrightnessDto {
     int brightness;

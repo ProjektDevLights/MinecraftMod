@@ -1,4 +1,4 @@
-package de.devlight.api;
+package de.devlights.api;
 
 import okhttp3.Interceptor;
 import okhttp3.Request;

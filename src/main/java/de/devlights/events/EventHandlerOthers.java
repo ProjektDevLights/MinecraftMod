@@ -1,7 +1,7 @@
-package de.devlight.events;
+package de.devlights.events;
 
-import de.devlight.api.Api;
-import de.devlight.utils.Color;
+import de.devlights.api.Api;
+import de.devlights.utils.Color;
 import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.gui.screen.MultiplayerScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -42,11 +42,11 @@ public class EventHandlerOthers {
 
             if(screen instanceof MainMenuScreen){
                 try {
-                    Field splashText = MainMenuScreen.class.getDeclaredFields()[5];
+                    Field splashText = MainMenuScreen.class.getDeclaredField("splashText");
                     splashText.setAccessible(true);
                     int index = (int)Math.round(Math.random()*(splashes.length-1));
                     splashText.set(screen, splashes[index]);
-                } catch (IllegalAccessException e) {
+                } catch (IllegalAccessException | NoSuchFieldException e) {
                     e.printStackTrace();
                 }
             }

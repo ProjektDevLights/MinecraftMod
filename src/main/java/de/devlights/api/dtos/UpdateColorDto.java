@@ -1,6 +1,6 @@
-package de.devlight.api.dtos;
+package de.devlights.api.dtos;
 
-import de.devlight.utils.Color;
+import de.devlights.utils.Color;
 
 public class UpdateColorDto {
     private String pattern;

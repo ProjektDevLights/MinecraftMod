@@ -1,0 +1,18 @@
+{
+  "TAIGA": "#00ff7d",
+  "EXTREME_HILLS" : "#ffffff",
+  "JUNGLE": "#4fff00",
+  "MESA" : "#ff5100",
+  "PLAINS" : "#abff00",
+  "SAVANNA" : "#ccff00",
+  "ICY" : "#00b0ff",
+  "THEEND" : "#5f0089",
+  "BEACH" : "#ffc700",
+  "FOREST" : "#006408",
+  "OCEAN" : "#0019ff",
+  "DESERT" : "#ffff00",
+  "RIVER" : "#005fff",
+  "SWAMP" : "#007102",
+  "MUSHROOM" : "#78451f",
+  "NETHER" : "#380400"
+}

@@ -1,4 +1,4 @@
-package de.devlight.utils;
+package de.devlights.utils;
 
 public class Color {
 
@@ -42,7 +42,7 @@ public class Color {
     }
 
     public String toString() {
-        return getHex();
+        return "#" + getHex();
     }
 
 }

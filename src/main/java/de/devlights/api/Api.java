@@ -1,14 +1,13 @@
-package de.devlight.api;
+package de.devlights.api;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import de.devlight.api.dtos.BlinkColorDto;
-import de.devlight.api.dtos.BrightnessDto;
-import de.devlight.api.dtos.UpdateColorDto;
-import de.devlight.utils.ArraySerialiazer;
-import de.devlight.utils.Color;
+import de.devlights.api.dtos.BlinkColorDto;
+import de.devlights.api.dtos.BrightnessDto;
+import de.devlights.api.dtos.UpdateColorDto;
+import de.devlights.utils.ArraySerialiazer;
+import de.devlights.utils.Color;
 import okhttp3.*;
-import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
