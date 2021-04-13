@@ -34,6 +34,7 @@ public class EventHandlerOthers {
         if(checkMenuForRunner(screen) && this.currentScreen != screen){
             this.currentScreen = screen;
             try {
+                Api.setBrightness(255).get();
                 Api.turnOn().get();
                 Api.setRunnerColor(new Color("#ff0403"), 100);
             } catch (InterruptedException | ExecutionException  exception) {}

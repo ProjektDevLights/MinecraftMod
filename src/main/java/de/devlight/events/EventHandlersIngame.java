@@ -7,7 +7,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.BowItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.vector.Vector2f;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.LightType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -31,49 +36,28 @@ public class EventHandlersIngame {
     private int playerXp;
     private double lightLevelRatio;
     private Date nextUpdate = new Date();
+    private boolean inVehicle;
 
     @SubscribeEvent
     public void onPlayerTick(PlayerTickEvent event) {
         Date now = new Date();
         if (isRightPlayer(event.player) && event.phase.equals(Phase.END) && now.getTime() > nextUpdate.getTime()) {
-            biomeDetector.run();
             PlayerEntity player = event.player;
-            ClientWorld world = Minecraft.getInstance().world;
-            if (player.isSleeping() != this.isSleeping) {
-                System.out.println("sleeping");
-                this.isSleeping = player.isSleeping();
-                if (this.isSleeping) {
-                    Api.turnOff();
-                } else {
-                    Api.turnOn();
-                }
-            }
-            if (player.experienceTotal != playerXp) {
-                this.playerXp = player.experienceTotal;
-                Api.blink(new Color("#00ff00"), 400);
-                Date next = new Date();
-                next.setTime(next.getTime() + 1000);
-                nextUpdate = next;
-            }
-            double sunLightReductionRatioByRain = 1 - world.getRainStrength(1.0f) * 5 / 16;
-            double sunLightReductionRatioByThunder = 1 - world.getThunderStrength(1.0f) * 5 / 16;
-            double sunLightReductionRatioByTime = 0.5
-                    + 2 * MathHelper.clamp(MathHelper.cos(world.getCelestialAngleRadians(1.0f)), -0.25, 0.25);
-            int sunLightReduction = (int) ((1
-                    - sunLightReductionRatioByRain * sunLightReductionRatioByThunder * sunLightReductionRatioByTime)
-                    * 11);
-            int blockLight = world.getChunkProvider().getLightManager().getLightEngine(LightType.BLOCK)
-                    .getLightFor(player.getPosition());
-            int skyLight = world.getLightManager().getLightEngine(LightType.SKY).getLightFor(player.getPosition());
-            int sunLight = Math.max(skyLight - sunLightReduction, 0);
 
-            double curlightLevelRatio = (float) Math.max(1, Math.min(sunLight + blockLight, 16)) / 16.0f;
-            if (lightLevelRatio != curlightLevelRatio) {
-                lightLevelRatio = curlightLevelRatio;
-                Api.setBrightness((int) (255 * lightLevelRatio));
+            biomeDetector.run();
+            if (player.isSleeping() != this.isSleeping) runSleepAction(player);
+            if (player.experienceTotal != playerXp) runXpAction(player);
+            runBrighnessCheckAction(player);
+            if (player.isPassenger()) {
+                inVehicle = true;
+                runRidingAction(player);
+            } else if(inVehicle){
+                inVehicle = false;
+                biomeDetector.run(true);
             }
         }
     }
+
 
     @SubscribeEvent
     public void onPlayerDeath(LivingDeathEvent event){
@@ -93,6 +77,69 @@ public class EventHandlersIngame {
         }
     }
 
+    private void runRidingAction(PlayerEntity player) {
+        Vector3d motion = player.getRidingEntity().getMotion();
+        double motionAbs = pythagoras(motion.x, motion.z);
+        // speed in range 50-3000, to turn it around *-1 and +1530 => 30 = 1500, 1500 = 30
+        int timeout = (int) Math.max(30, Math.min(motionAbs*750, 1500))*-1 + 1530;
+        System.out.println(timeout);
+        // TODO in biome color (BiomeDetector::getColor)
+        Api.setRunnerColor(new Color("#00ffff"), timeout);
+        Date next = new Date();
+        next.setTime(next.getTime() + 200);
+        nextUpdate = next;
+
+    }
+
+    private double pythagoras(double a, double b){
+        return Math.sqrt(a*a+b*b);
+    }
+
+
+    private void runSleepAction(PlayerEntity player){
+            System.out.println("sleeping");
+            this.isSleeping = player.isSleeping();
+            if (this.isSleeping) {
+                Api.turnOff();
+            } else {
+                Api.turnOn();
+            }
+    }
+
+    private void runXpAction(PlayerEntity player){
+            this.playerXp = player.experienceTotal;
+            Api.blink(new Color("#00ff00"), 400);
+            Date next = new Date();
+            next.setTime(next.getTime() + 1000);
+            nextUpdate = next;
+    }
+
+    private void runBrighnessCheckAction(PlayerEntity player){
+
+        ClientWorld world = Minecraft.getInstance().world;
+
+        double sunLightReductionRatioByRain = 1 - world.getRainStrength(1.0f) * 5 / 16;
+        double sunLightReductionRatioByThunder = 1 - world.getThunderStrength(1.0f) * 5 / 16;
+        double sunLightReductionRatioByTime = 0.5
+                + 2 * MathHelper.clamp(MathHelper.cos(world.getCelestialAngleRadians(1.0f)), -0.25, 0.25);
+        int sunLightReduction = (int) ((1
+                - sunLightReductionRatioByRain * sunLightReductionRatioByThunder * sunLightReductionRatioByTime)
+                * 11);
+        int blockLight = world.getChunkProvider().getLightManager().getLightEngine(LightType.BLOCK)
+                .getLightFor(player.getPosition());
+        int skyLight = world.getLightManager().getLightEngine(LightType.SKY).getLightFor(player.getPosition());
+        int sunLight = Math.max(skyLight - sunLightReduction, 0);
+
+        double curlightLevelRatio = (float) Math.max(1, Math.min(sunLight + blockLight, 16)) / 16.0f;
+        if (lightLevelRatio != curlightLevelRatio) {
+            lightLevelRatio = curlightLevelRatio;
+            Api.setBrightness((int) (255 * lightLevelRatio));
+
+            Date next = new Date();
+            next.setTime(next.getTime() + 500);
+            nextUpdate = next;
+        }
+    }
     /*
      * @SubscribeEvent public void onPlayerHurt(LivingAttackEvent event) { if
      * (isRightPlayer(event.getEntityLiving())) { LOGGER.info("player hurt");
