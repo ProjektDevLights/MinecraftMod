@@ -28,7 +28,7 @@ public class EventHandlersIngame {
     private BiomeDetector biomeDetector = new BiomeDetector();
     private static final Logger LOGGER = LogManager.getLogger();
     private boolean isSleeping;
-    private int playerXp;
+    private int playerXpLevel;
     private double lightLevelRatio;
     private Date nextUpdate = new Date();
     private boolean inVehicle;
@@ -44,7 +44,7 @@ public class EventHandlersIngame {
     private void runEventChecks(){
         PlayerEntity player = Minecraft.getInstance().player;
         if (player.isSleeping() != this.isSleeping) runSleepAction(player);
-        if (player.experienceTotal != playerXp) runXpAction(player);
+        if (player.experienceLevel != playerXpLevel) runXpAction(player);
         runBrighnessCheckAction(player);
         // currently in vehicle
         if (player.isPassenger()) {
@@ -107,8 +107,8 @@ public class EventHandlersIngame {
 
     // does not work anymore (do just for every 5 level)
     private void runXpAction(PlayerEntity player){
-            this.playerXp = player.experienceTotal;
-            Api.blink(new Color("#00ff00"), 400);
+            this.playerXpLevel = player.experienceLevel;
+            Api.blink(new Color("#00ff00"), 1500);
             Date next = new Date();
             next.setTime(next.getTime() + 1000);
             nextUpdate = next;
