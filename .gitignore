@@ -5,6 +5,10 @@ run/
 build/
 gradle-app.setting
 
+
+## Vscode
+.vscode
+
 ## IntelliJ IDEA
 
 .idea/
