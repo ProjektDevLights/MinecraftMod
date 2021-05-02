@@ -16,10 +16,9 @@ import java.util.concurrent.Future;
 
 
 public class Api {
-    private static ExecutorService executor = Executors.newFixedThreadPool(10);
-    private static Gson gson = new GsonBuilder().registerTypeAdapter(String[].class, new ArraySerialiazer<>()).create();
-    private static OkHttpClient client = new OkHttpClient.Builder().addInterceptor(new HeaderInterceptor()).build();
-    private static String baseUrl = "http://devlight.local/tags/minecraft/";
+    private static final ExecutorService executor = Executors.newFixedThreadPool(10);
+    private static final Gson gson = new GsonBuilder().registerTypeAdapter(String[].class, new ArraySerialiazer<>()).create();
+    private static final OkHttpClient client = new OkHttpClient.Builder().addInterceptor(new HeaderInterceptor()).build();
 
     enum RequestMethod{
         GET,
@@ -61,6 +60,7 @@ public class Api {
     }
 
     public static Request generateRequest(String url, Object data, RequestMethod method){
+        String baseUrl = "http://devlight.local/tags/minecraft/";
         switch (method){
             case GET:
                 return new Request.Builder().url(baseUrl + url).get().build();

@@ -13,8 +13,6 @@ import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.Biome.Category;
 import net.minecraft.world.biome.Biomes;
 import org.apache.commons.io.IOUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +22,6 @@ import java.util.Map;
 
 public class BiomeDetector {
 
-    private static final Logger LOGGER = LogManager.getLogger();
     private final HashMap<String, Color> biomeMappings = new HashMap<>();
     private final HashMap<Category, Color> categoryMappings = new HashMap<>();
 
@@ -41,7 +38,6 @@ public class BiomeDetector {
         ResourceLocation file = new ResourceLocation("devlights" ,"biome_mappings.json");
         JsonObject jsonMappings = readJson(file);
         for(Map.Entry<String, JsonElement> entry : jsonMappings.entrySet()){
-            System.out.println(entry.getKey());
             try {
                 RegistryKey<Biome> registryKey = (RegistryKey<Biome>) Biomes.class.getDeclaredField(entry.getKey()).get(null);
                 biomeMappings.put(registryKey.getLocation().toString(), new Color(entry.getValue().getAsString()));
@@ -71,34 +67,40 @@ public class BiomeDetector {
 
     public void run(boolean force) {
         Biome biome = getPlayerBiome();
-        if (currentBiome == null || (!currentBiome.equals(biome) || force)) {
+        if (currentBiome == null || !currentBiome.equals(biome) || force) {
             currentBiome = biome;
-            System.out.println(getColorForBiome(biome));
             Api.setSingleColor(getColorForBiome(biome));
         }
 
     }
 
     public Biome getPlayerBiome(){
+        if (mc.player == null || mc.world == null) return null;
         return mc.world.getBiome(mc.player.getPosition());
     }
 
 
     private Color getColorForBiome(Biome biome){
-        try {
-            if(biome.getCategory().equals(Category.NETHER)){
-                try {
-                    return biomeMappings.get(getLocationFromBiome(biome).toString());
-                } catch (NullPointerException e){
-                    return categoryMappings.get(Category.NETHER);
-                }
-            } else {
-                return categoryMappings.get(biome.getCategory());
-            }
-        } catch (NullPointerException e){
-            System.out.println("Unkown Biome Category or wrong configuration file!");
-            return new Color("#ffffff");
-        }
+
+        ResourceLocation biomeLocation = getLocationFromBiome(biome);
+        if(biomeLocation == null) return new Color("#1de9b6");
+
+        String biomeLocationPath = biomeLocation.toString();
+        Color color;
+
+        // try to get biome color
+        color = biomeMappings.get(biomeLocationPath);
+        if(color != null) return color;
+
+        // try to get category color
+        color = categoryMappings.get(biome.getCategory());
+        if(color != null) return color;
+
+        System.out.println("Biome color and category unknown to current config file!");
+        return new Color("#1de9b6");
+
+
+
 
     }
 
@@ -107,13 +109,8 @@ public class BiomeDetector {
     }
 
     private ResourceLocation getLocationFromBiome(Biome biome){
+        if(Minecraft.getInstance().world == null) return  null;
         return Minecraft.getInstance().world.func_241828_r().getRegistry(Registry.BIOME_KEY).getKey(biome);
-    }
-
-    private boolean compareBiomeToKey(Biome biome, RegistryKey<Biome> key) {
-        return getLocationFromBiome(biome)
-                .equals(key.getLocation());
-
     }
 
 

@@ -8,30 +8,30 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.LightType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.TickEvent.Phase;
 import net.minecraftforge.event.TickEvent.PlayerTickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
 
 @OnlyIn(Dist.CLIENT)
 public class EventHandlersIngame {
 
-    private BiomeDetector biomeDetector = new BiomeDetector();
-    private static final Logger LOGGER = LogManager.getLogger();
+    private final BiomeDetector biomeDetector = new BiomeDetector();
     private boolean isSleeping;
     private int playerXpLevel;
     private double lightLevelRatio;
     private Date nextUpdate = new Date();
     private boolean inVehicle;
+
 
     @SubscribeEvent
     public void onPlayerTick(PlayerTickEvent event) {
@@ -40,18 +40,21 @@ public class EventHandlersIngame {
             runEventChecks();
         }
     }
-
-    private void runEventChecks(){
-        PlayerEntity player = Minecraft.getInstance().player;
-        if (player.isSleeping() != this.isSleeping) runSleepAction(player);
-        if (player.experienceLevel != playerXpLevel) runXpAction(player);
-        runBrighnessCheckAction(player);
+    @SubscribeEvent
+    public void onHotbarRender(RenderGameOverlayEvent.Pre event){
         // currently in vehicle
+        if (event.getType() != RenderGameOverlayEvent.ElementType.HOTBAR) return;
+        if(!(new Date().getTime() > nextUpdate.getTime())) return;
+        Date next = new Date();
+        next.setTime(next.getTime() + 400);
+        nextUpdate = next;
+        PlayerEntity player = Minecraft.getInstance().player;
+        if(player == null) return;
         if (player.isPassenger()) {
             inVehicle = true;
             runRidingAction(player);
             // just got out of vehicle
-        } else if(inVehicle){
+        } else if (inVehicle) {
             inVehicle = false;
             biomeDetector.run(true);
             // not in vehicle
@@ -60,43 +63,61 @@ public class EventHandlersIngame {
         }
     }
 
+    private void runEventChecks(){
+        PlayerEntity player = Minecraft.getInstance().player;
+        if(player == null) return;
+        if (player.isSleeping() != this.isSleeping) runSleepAction(player);
+        if (player.experienceLevel != playerXpLevel) runXpAction(player);
+        runBrightnessCheckAction(player);
+    }
+
 
     @SubscribeEvent
-    public void onPlayerDeath(LivingDeathEvent event){
+    public void onPlayerDeath(LivingDeathEvent event) {
         if(isRightPlayer(event.getEntityLiving())){
-            Api.blink(new Color("#ff0000"), 1000);
+            Api.turnOff();
+        }
+    }
+
+    @SubscribeEvent
+    void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event){
+        if(isRightPlayer(event.getPlayer())){
+            try {
+                Api.turnOn().get();
+            } catch (InterruptedException | ExecutionException exception) {
+                exception.printStackTrace();
+            }
+            biomeDetector.run(true);
         }
     }
 
 
     @SubscribeEvent
     public void onChatMessageReceived(ClientChatReceivedEvent event){
-        String messsage = event.getMessage().toString().toLowerCase();
-        if(messsage.contains("party")){
-            if(messsage.contains("end")){
-                runEventChecks();
-            } else Api.startParty();
+        String message = event.getMessage().getString().toLowerCase();
+        if(message.contains("party")){
+            if(message.contains("end")){
+                biomeDetector.run(true);
+            } else {
+                Api.startParty();}
         }
     }
 
     private void runRidingAction(PlayerEntity player) {
-        Vector3d motion = player.getRidingEntity().getMotion();
-        double motionAbs = pythagoras(motion.x, motion.z);
-        // speed in range 30-1500, to turn it around *-1 and +1530 => 30 = 1500, 1500 = 30
-        int timeout = (int) Math.max(30, Math.min(motionAbs*750, 1500))*-1 + 1530;
-        System.out.println(motion);
-        Api.setRunnerColor(biomeDetector.getColor(), timeout);
-        Date next = new Date();
-        next.setTime(next.getTime() + 200);
-        nextUpdate = next;
 
+        double distTraveledLastTickX = Minecraft.getInstance().player.getPosX() - Minecraft.getInstance().player.prevPosX;
+        double distTraveledLastTickZ = Minecraft.getInstance().player.getPosZ() - Minecraft.getInstance().player.prevPosZ;
+        double currentSpeed = pythagoras(distTraveledLastTickX, distTraveledLastTickZ);
+
+        int timeout = (int) Math.max(30, Math.min(currentSpeed*20*125, 1500))*-1 + 1530;
+        Api.setRunnerColor(biomeDetector.getColor(), timeout);
     }
 
     private double pythagoras(double a, double b){
         return Math.sqrt(a*a+b*b);
     }
+
     private void runSleepAction(PlayerEntity player){
-            System.out.println("sleeping");
             this.isSleeping = player.isSleeping();
             if (this.isSleeping) {
                 Api.turnOff();
@@ -105,19 +126,18 @@ public class EventHandlersIngame {
             }
     }
 
-    // does not work anymore (do just for every 5 level)
     private void runXpAction(PlayerEntity player){
             this.playerXpLevel = player.experienceLevel;
             Api.blink(new Color("#00ff00"), 1500);
             Date next = new Date();
-            next.setTime(next.getTime() + 1000);
+            next.setTime(next.getTime() + 1500);
             nextUpdate = next;
     }
 
-    private void runBrighnessCheckAction(PlayerEntity player){
+    private void runBrightnessCheckAction(PlayerEntity player){
 
         ClientWorld world = Minecraft.getInstance().world;
-
+        if(world == null) return;
         double sunLightReductionRatioByRain = 1 - world.getRainStrength(1.0f) * 5 / 16;
         double sunLightReductionRatioByThunder = 1 - world.getThunderStrength(1.0f) * 5 / 16;
         double sunLightReductionRatioByTime = 0.5
@@ -136,20 +156,17 @@ public class EventHandlersIngame {
             Api.setBrightness((int) (255 * lightLevelRatio));
 
             Date next = new Date();
-            next.setTime(next.getTime() + 500);
+            next.setTime(next.getTime() + 250);
             nextUpdate = next;
         }
     }
-    /*
-     * @SubscribeEvent public void onPlayerHurt(LivingAttackEvent event) { if
-     * (isRightPlayer(event.getEntityLiving())) { LOGGER.info("player hurt");
-     * Api.blink(new Color("#ff0000"), 500); } }
-     */
 
     private boolean isRightPlayer(LivingEntity player) {
         if (!(player instanceof PlayerEntity)) {
             return false;
         }
-        return Minecraft.getInstance().player.equals(player);
+        PlayerEntity minecraftPlayer = Minecraft.getInstance().player;
+        if(minecraftPlayer == null) return false;
+        return minecraftPlayer.equals(player);
     }
 }

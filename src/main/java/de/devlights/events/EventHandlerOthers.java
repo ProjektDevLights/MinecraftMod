@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 public class EventHandlerOthers {
 
     private final String[] splashes = {
-            "Buy DevLight!",
+            "Buy DevLights!",
             "Light your Minecraft up",
             "Soon in Haskell",
             "Buy TECKboards!",
